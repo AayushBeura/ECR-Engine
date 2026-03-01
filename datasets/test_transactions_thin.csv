@@ -1,0 +1,6 @@
+transaction_id,timestamp,amount,status,merchant_category,receiver_upi_id,sender_upi_id
+TXN857716,2025-12-18 16:53:17,3686.24,SUCCESS,entertainment,merchant3@upi,testuser@upi
+TXN698463,2026-02-02 03:53:17,4492.57,FAILED,telecom,user1@upi,testuser@upi
+TXN101948,2026-02-08 23:53:17,2537.07,FAILED,entertainment,user13@upi,testuser@upi
+TXN867159,2026-02-17 21:53:17,4307.71,SUCCESS,utility,user6@upi,testuser@upi
+TXN561317,2026-02-18 21:53:17,599.88,SUCCESS,entertainment,user1@upi,testuser@upi

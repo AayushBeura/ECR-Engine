@@ -1,0 +1,1076 @@
+EXPLAINABLE CREDIT RISK
+ENGINE FOR INDIA
+Complete Technical Specification & Architecture
+With Full Implementation Details & Architectural Decisions
+Team:Ashmit & Nafisa (ML) — Aayush & Sumia (Frontend)
+Status:Proof of Concept (PoC)
+Timeline:14 Days —Date:January 22, 2026
+Proof-of-Concept Technical Blueprint for Compliant, Explainable AI-
+Driven Digital Lending in India’s Informal Economy
+1Credit Risk Engine - IndiaPoC Specification
+Contents
+1 Executive Overview & Context 4
+1.1 The Problem: India’s Lending Gap . . . . . . . . . . . . . . . . . . . . . 4
+1.2 The Regulatory Imperative: RBI Digital Lending Guidelines 2023 . . . . 4
+1.3 Our Solution: Explainability-First Architecture . . . . . . . . . . . . . . 5
+2 Regulatory Architecture 7
+2.1 Direct Fund Flow Mechanism (The “Shadow Ledger” Model) . . . . . . . 7
+2.2 Data Sovereignty & DPDP Act 2023 . . . . . . . . . . . . . . . . . . . . 8
+2.3 Key Fact Statement (KFS) Engine . . . . . . . . . . . . . . . . . . . . . 9
+3 Data Strategy for Thin-File Borrowers 10
+3.1 The “Alternative Data” Philosophy . . . . . . . . . . . . . . . . . . . . . 10
+3.2 Data Hierarchy: What We Use and Why . . . . . . . . . . . . . . . . . . 10
+3.3 UPI Transaction Analysis: Income Proxy . . . . . . . . . . . . . . . . . . 10
+3.4 Network Centrality: Social Proof . . . . . . . . . . . . . . . . . . . . . . 11
+3.5 SMS Parsing: Virtual Bank Statement . . . . . . . . . . . . . . . . . . . 11
+3.6 Utility/Bill Payment Data: Willingness-to-Pay . . . . . . . . . . . . . . . 12
+4 Feature Engineering for Informal Sector 13
+4.1 Volatility & Stability Indices . . . . . . . . . . . . . . . . . . . . . . . . . 13
+4.2 Sawtooth Analysis: Savings Buffer Detection . . . . . . . . . . . . . . . . 13
+4.3 Affordability Index: Beyond Debt-to-Income . . . . . . . . . . . . . . . . 14
+4.4 Complete Feature Engineering Summary . . . . . . . . . . . . . . . . . . 15
+5 Machine Learning Model Architecture 16
+5.1 Algorithm Selection: Why LightGBM . . . . . . . . . . . . . . . . . . . . 16
+5.2 Monotonic Constraints: Enforcing Fairness . . . . . . . . . . . . . . . . . 17
+5.3 Probability Calibration: Isotonic Regression . . . . . . . . . . . . . . . . 17
+6 Explainability Engine: SHAP + Reason Codes + Counterfactuals 19
+6.1 SHAP: The Theoretical Foundation . . . . . . . . . . . . . . . . . . . . . 19
+6.2 Reason Codes: From SHAP Values to Human Language . . . . . . . . . 19
+6.3 Counterfactual Explanations: Paths to Approval . . . . . . . . . . . . . . 21
+7 Full-Stack Architecture 23
+7.1 Microservices with FastAPI: System Design . . . . . . . . . . . . . . . . 23
+7.2 Database Schema: Compliance-First Design . . . . . . . . . . . . . . . . 24
+7.3 Offline-First Frontend: Next.js PWA . . . . . . . . . . . . . . . . . . . . 26
+7.4 Security Architecture . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 27
+8 Operationalization & Monitoring 28
+8.1 Drift Detection: Two Types . . . . . . . . . . . . . . . . . . . . . . . . . 28
+8.2 Automated Retraining Pipeline . . . . . . . . . . . . . . . . . . . . . . . 29
+8.3 Fairness Auditing: Disparate Impact Analysis . . . . . . . . . . . . . . . 29
+9 Architectural Decisions: What We Built vs. Original Specification 30
+9.1 Simplified vs. Original (Trade-offs) . . . . . . . . . . . . . . . . . . . . . 30
+KIIT University, Bhubaneswar Page 2Credit Risk Engine - IndiaPoC Specification
+10 Deliverables (14-Day Sprint) 32
+10.1 Phase 1 - ML Pipeline . . . . . . . . . . . . . . . . . . . . . . . . . . . . 32
+10.2 Phase 2 - Backend . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 32
+10.3 Phase 3 - Frontend . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 32
+10.4 Phase 4 - Documentation . . . . . . . . . . . . . . . . . . . . . . . . . . . 33
+11 Scope Boundaries: What We Explicitly NOT Building 34
+12 Conclusion 35
+KIIT University, Bhubaneswar Page 3Credit Risk Engine - IndiaPoC Specification
+1 Executive Overview & Context
+1.1 The Problem: India’s Lending Gap
+India faces a fundamental credit access crisis that has persisted for decades despite rapid
+digital adoption. The paradox is stark: India has the world’s fastest-growing digital
+payments ecosystem (UPI processes over 500 million transactions daily), yet 400 million
+people remain functionally unbanked from a lending perspective.
+Consider this scenario: Rajesh is a Zomato delivery agent earning 50,000/month
+through UPI. His transaction history shows stable income, consistent merchant payouts,
+regular bill payments, and financial discipline. Yet he has a CIBIL score of 0 (new to
+credit). Traditional banks reject him immediately. He has no mechanism to prove his
+creditworthiness.
+The Core Problem:
+•400 million unbanked/underbankedindividuals lack formal credit history. These
+are not poor individuals—many earn sustainable incomes. But without documented
+employment, they’re invisible to credit systems.
+•90% of Indian workersin informal employment (gig, small business, agriculture).
+Traditional lending was designed for salaried workers with ITR forms and salary
+slips. It has no mechanism for the gig economy.
+•$150 billion annuallyflows through UPI but creates no credit records. Every
+transaction is a signal. Yet credit bureaus cannot access this goldmine of data.
+•Black-box lending modelsreject borrowers without explanation. Even where
+credit scoring exists, borrowers get vague reasons and zero recourse. The system is
+opaque and unfair.
+Why Traditional Infrastructure Fails:
+1.Income Documentation Gap:Formal documentation unavailable for informal
+workers. A salaried employee has salary slips. A gig worker has UPI transaction
+history. Banks only understand the first.
+2.Thin-File Problem:New-to-credit borrowers have no CIBIL history. They get
+rejected before even being considered. The system bootstraps debt through preda-
+tory lending.
+3.Information Asymmetry:Lenders have all power. Borrowers have none. Hidden
+fees, arbitrary rates, coercive recovery. No transparency.
+4.Algorithmic Opacity:Even modern fintech apps use black-box models. Borrower
+rejected with no explanation. How do they improve? They can’t.
+1.2 The Regulatory Imperative: RBI Digital Lending Guide-
+lines 2023
+In September 2023, the Reserve Bank of India issued the Digital Lending Guidelines (DLG
+2023)—a seismic shift in how lending platforms must operate. This wasn’t incremental
+regulation. It was a mandate for responsible, transparent AI in finance.
+The RBI identified systemic problems in the digital lending ecosystem:
+KIIT University, Bhubaneswar Page 4Credit Risk Engine - IndiaPoC Specification
+•Predatory lending practices targeting vulnerable populations
+•Black-box algorithms with no explainability
+•Data privacy violations (data stored outside India, shared without consent)
+•Coercive recovery practices (fake police calls, harassment)
+•Algorithmic bias (women, minorities rejected at higher rates)
+The DLG 2023 Response:
+Five Pillars of Compliance:
+1.Explainability:Every adverse action must have specific, clear reasons.
+“You were rejected because income stability is 0.65 (above threshold 0.70)
+and payment failures = 2 (above threshold 0).” Precise, auditable, explain-
+able.
+2.Data Protection:DPDP Act 2023 mandates: All data stays in India.
+Data used only for stated purpose. Automatic deletion after purpose fulfilled.
+Right-to-deletion on demand.
+3.Fairness:No discriminatory lending. Approval rates cannot vary unjustly by
+gender/caste/religion/geography. Monthly disparate impact audits required.
+4.Audit Trails:Every decision tied to model version + timestamp + feature
+values + SHAP explanations. Regulators can audit decisions 5 years later.
+Immutable.
+5.Direct Fund Flow:Fintech cannot hold borrower funds. No pass-through
+accounts. Money flows: Bank→Borrower→Bank directly. Fintech is UI
+only.
+Core Principle:Black-box AI lending is now obsolete and legally perilous. Platforms
+cannot explain decisions face license revocation and legal liability.
+1.3 Our Solution: Explainability-First Architecture
+We built a credit decision engine where explainability is the foundation, not a feature
+bolted on at the end.
+The Four Pillars of Our System:
+1.Smart Alternative Data:We don’t reject borrowers for lacking CIBIL scores.
+Instead, we analyze 6 months of UPI transaction history to estimate income stabil-
+ity, merchant diversity, financial hygiene, and affordability. A delivery agent’s UPI
+history is often more predictive than missing credit scores.
+2.Fair ML Models:LightGBM with monotonic constraints ensures: Higher income
+= Higher approval (never reversed by noise). Better financial behavior = Always
+improves score. No spurious correlations. No algorithmic bias through back doors.
+KIIT University, Bhubaneswar Page 5Credit Risk Engine - IndiaPoC Specification
+3.Explainability by Design:Every decision explained via SHAP + human-readable
+reason codes. When rejected: “Your income sources appear irregular (impact -0.15).
+You have payment failures (impact -0.10). Your affordability is low (impact -0.03).”
+Transparent. Auditable. Understandable.
+4.Actionable Recourse:DiCE counterfactuals show concrete paths to approval.
+“Pay down 5,000 debt→Score 0.62 (APPROVED). Add 5 new merchants→
+Score 0.55 (APPROVED). Get formal employment→Score 0.71 (APPROVED).”
+Borrowers have agency.
+Additional Guarantees:
+•Immutable Audit Trails:Every decision logged with model version, timestamp,
+features, SHAP values
+•DPDP Compliance:Granular consent management, automatic purging, right-
+to-deletion
+•Offline-First Design:Works on 2G networks and low-end devices (target demo-
+graphic)
+•Direct Fund Flow:Fintech never touches borrower money (RBI compliance)
+KIIT University, Bhubaneswar Page 6Credit Risk Engine - IndiaPoC Specification
+2 Regulatory Architecture
+2.1 Direct Fund Flow Mechanism (The “Shadow Ledger” Model)
+The RBI explicitly prohibits pass-through accounts. Historically, fintechs would pool
+borrower repayments into their own nodal accounts, then settle with lenders days later.
+This created:
+•Concentration risk (if fintech fails, borrower money is trapped)
+•Potential for embezzlement
+•Regulatory arbitrage (fintech controls funds, not regulated entity)
+Our Solution: Nodal Bypass Architecture
+Disbursement Path:
+1. User approved by ML model (score 0.72, above 0.50 threshold)
+2. LOS sends approval signal with loan amount to Regulated Entity (RE)
+3. RE’s Core Banking System (CBS) initiates direct fund transfer
+4. Amount flows: RE’s bank account→Borrower’s validated bank account (DIRECT)
+5. Fintech receives only webhook: “DISBURSEMENT SUCCESS” with txn ID
+6. Fintech database records: intent, timestamp, confirmation
+Repayment Path:
+1. Borrower grants repayment mandate (e-NACH or UPI Autopay)
+2. Mandate beneficiary = RE VPA/account (NOT fintech)
+3. Fintech app provides UI for mandate registration
+4. Monthly: Money flows RE account→Borrower account (auto-debit)
+5. Fintech receives confirmation webhook
+6. Fintech records in shadow ledger (intent + confirmation)
+Key Innovation: Shadow Ledger vs. Legal Ledger
+Fintech maintains a “Shadow Ledger” in PostgreSQL that records:
+•Transaction intent (approved disbursement of 10,000 on Jan 15)
+•Confirmation status (SUCCESS/FAILURE/PENDING)
+•Timestamp
+•User ID
+This shadow ledger is NOT the legal record. The legal record is RE’s bank statement.
+Reconciliation service compares shadow ledger against RE’s actual bank transactions
+daily. If discrepancies found, alerts data team. RE’s bank statement is always source of
+truth.
+Why This Matters:If fintech app crashes, data corruption, or bankruptcy, the
+RE’s bank statement proves what happened. Borrowers’ funds were never at risk.
+KIIT University, Bhubaneswar Page 7Credit Risk Engine - IndiaPoC Specification
+2.2 Data Sovereignty & DPDP Act 2023
+The DPDP Act 2023 introduced India’s first comprehensive data protection law. For
+lending platforms, the key requirements are:
+Requirement 1: Data Localization
+All personal data must physically reside in India. This includes:
+•Primary database (users, applications, transactions)
+•Backups (must stay in India)
+•Analytics data warehouse (India only)
+•Logs (all in India)
+Our Implementation:
+•PostgreSQL primary in AWS ap-south-1 (Mumbai)
+•Backup replication to AWS ap-south-2 (Hyderabad)
+•NO cross-region replication to Singapore/Frankfurt/US
+•Violation = Regulatory action + potential 50 crore fine
+Requirement 2: Purpose Limitation
+Data must be purged once its purpose is fulfilled. This is radical departure from
+“store everything forever” philosophy of big data.
+Our Implementation:
+KYC Data:Retained 5-10 years (PMLA compliance requirement)
+•PAN, Aadhaar, phone kept in encrypted form
+•Statutory requirement, not optional
+Alternative Data (SMS logs, UPI transactions):Purged after 6 months
+•If loan approved: Retained for 6 months for fraud detection (with explicit consent)
+•If loan rejected: Purged immediately after decision (log only the score, not raw
+SMS)
+•After 6 months: Automatic deletion via scheduled job
+API Endpoint for Consent Revocation:
+1DELETE /api/ user /{ user_id }/ data ? purpose = credit_assessment
+2
+3Triggers :
+41. Flag application as REVOKED
+52. Delete SMS logs for this user
+63. Delete UPI transaction history
+74. Delete all intermediate features
+85. Mark in consent_ledger : revoked_at = NOW ()
+96. Within 30 days : All services must confirm deletion
+KIIT University, Bhubaneswar Page 8Credit Risk Engine - IndiaPoC Specification
+Requirement 3: Consent Management
+Every data use requires explicit consent. We track in ‘consent ledger‘ :
+What data? (SMS transactions, UPI, utility payments)
+For what purpose? (credit assessment, fraud detection, marketing)
+When granted? (timestamp)
+When revoked? (timestamp if applicable)
+2.3 Key Fact Statement (KFS) Engine
+Regulatory Requirement:Before signing any agreement, borrower must receive
+Key Fact Statement with all-inclusive Annual Percentage Rate (APR). This ensures
+transparency on total cost.
+Components of APR Calculation:
+Component Description Calculation Source
+Base Rate Lender’s cost of funds + margin RE product config
+Risk Premium Additional rate based on ML score Dynamic from model
+Processing Fee Operational cost From fee schedule
+Third-Party Charges Credit bureau, KYC verification From vendor invoices
+APR Formula:
+APR=TotalCost
+LoanAmount×365
+TenureinDays×100
+Example Calculation:
+Loan Amount: 10,000 Tenure: 12 months (365 days)
+•Base Rate: 12% p.a.
+•Risk Premium: 8% p.a. (from ML score 0.65 = moderate risk)
+•Processing Fee: 500 (flat)
+•Third-Party: 100
+Total Interest: (12% + 8%)×10,000 = 2,000 Total Fee: 500 + 100 = 600 Total
+Cost: 2,600
+APR=2600
+10000×365
+365×100 = 26%
+Why This Matters:Borrower sees true cost upfront. No hidden fees discovered
+later. Increases financial literacy and trust.
+Compliance Requirement:KFS stored as immutable record with cryptographic
+hash. If dispute arises years later, we prove exactly what was shown to borrower.
+KIIT University, Bhubaneswar Page 9Credit Risk Engine - IndiaPoC Specification
+3 Data Strategy for Thin-File Borrowers
+3.1 The “Alternative Data” Philosophy
+Traditional credit scoring relies on structured, sparse data: loan history, payment
+history, existing credit utilization. For thin-file borrowers (new to credit), this data
+doesn’t exist. So the system rejects them automatically.
+Our philosophy: Alternative data is richer and more predictive than traditional
+data for assessing informal sector borrowers.
+Why UPI Transaction Data is Gold:
+•High Velocity:Bank statements are monthly. UPI is daily. Captures real-
+time cash flow.
+•Behavioral Signal:Every transaction reveals financial behavior. Frequency,
+amount, timing, merchant type.
+•Gig Economy Fit:Captures multiple income sources, irregular timing. Nat-
+ural fit for informal workers.
+•Untapped Potential:Most fintechs ignore this. We extract maximum sig-
+nal.
+3.2 Data Hierarchy: What We Use and Why
+Data Source Availability Predictive Power Privacy Risk Our Priority
+UPI Transactions High (500M daily) Very High Medium PRIMARY
+SMS Parsing High (Android users) High Medium SECONDARY
+Utility Payments Medium (growing) Medium Low TERTIARY
+CIBIL Data Low (thin-file gap) Very High Low BLOCKED
+3.3 UPI Transaction Analysis: Income Proxy
+The Challenge:Gig workers don’t have “salary.” They have Zomato payouts,
+Swiggy payouts, Uber earnings, P2P money transfers. How do we identify real
+income?
+Our Solution: Cluster Consistency Analysis
+We scan 6 months of UPI transactions looking for:
+1.Recurring Inflows:Same VPA paying at regular intervals (e.g., Zomato
+pays every Friday)
+2.Consistency Check:Amount varies (800-1200) but frequency is regular
+3.Merchant Classification:Is it from a known payment processor? (Zomato,
+Swiggy, Uber, NEFT from business)
+KIIT University, Bhubaneswar Page 10Credit Risk Engine - IndiaPoC Specification
+4.Income Calculation:Sum consistent inflows = estimated monthly income
+Example:
+•Jan: Zomato payout 45K, P2P income 5K = 50K
+•Feb: Zomato payout 48K, P2P income 4K = 52K
+•Mar: Zomato payout 46K, P2P income 6K = 52K
+•Estimated monthly income: 51K (average) with stability index 0.02 (low
+volatility)
+Why This Works:More robust than asking for salary slip. Shows actual, verifi-
+able behavior over time.
+3.4 Network Centrality: Social Proof
+Innovation:Build a transaction graph and calculate borrower’s position in the
+network.
+Theory:Users who transact with well-established, highly-rated merchants/users
+are lower risk than users in closed loops with known defaulters.
+Implementation:
+1. Build directed graph: User→Counterparties
+2. Calculate Eigenvector Centrality: A measure of influence/connection quality
+3. Interpretation: High centrality = transacts with trustworthy nodes = lower
+default risk
+Example:
+•User A: Transacts with Flipkart, Amazon, HDFC Bank, Swiggy (established
+entities) = High centrality = Lower risk
+•User B: Transacts with same 3 individuals repeatedly (closed loop) = Low
+centrality = Higher risk
+3.5 SMS Parsing: Virtual Bank Statement
+The Data Source:Transactional SMS from banks. RBI permits reading (with
+consent) but prohibits reading personal messages.
+Our Parsing Logic:
+KIIT University, Bhubaneswar Page 11Credit Risk Engine - IndiaPoC Specification
+1Standard Bank SMS Pattern :
+2" Acct XX123 debited for Rs 500 on 15- Jan"
+3" Acct XX123 credited with Rs 2000 on 16- Jan"
+4"Low balance alert : Balance 1500 "
+5
+6Regex Extraction :
+71. Account number ( last 4 digits )
+82. Transaction type ( debit / credit )
+93. Amount (in Rs)
+104. Date / Time
+115. Alert type (Low balance , NSF , etc .)
+Features Derived:
+•Average Daily Balance (ADB):Sum of balances / days in period
+•NSF Alert Frequency:Count of “Low Balance” alerts (liquidity stress
+indicator)
+•Balance Volatility:Standard deviation of daily balance (financial stability)
+•Average Daily Debit:Mean debit amount (spending pattern)
+Why NSF Matters:A user earning 50K but receiving “Low Balance” alerts 20x
+per month is under cash flow stress. Even if they repay eventually, they’re high-risk.
+NSF frequency captures this better than income alone.
+3.6 Utility/Bill Payment Data: Willingness-to-Pay
+Data Source:Bharat Bill Payment System (BBPS) payment history. Utilities,
+mobile bills, electricity.
+Key Metric: Bill Payment Latency
+Latency=PaymentDate−BillGenerationDate
+•Latency = 0 days: Paid on due date = Reliable, organized
+•Latency = -3 days: Paid 3 days late = Financial stress, procrastination
+•Latency = variable (0 to -10 days): Inconsistent, disorganized finances
+Why This Works:Bill payment behavior is a proxy for loan repayment behavior.
+If you consistently pay electricity bills 5 days late, you’re likely to repay loans late
+too.
+KIIT University, Bhubaneswar Page 12Credit Risk Engine - IndiaPoC Specification
+4 Feature Engineering for Informal Sector
+The raw data (UPI transactions, SMS, bills) needs transformation into features
+suitable for machine learning. This is where domain knowledge meets engineering.
+4.1 Volatility & Stability Indices
+The Challenge:Gig workers have variable income. A delivery agent might earn
+50K one month, 30K the next. How do we quantify this risk?
+Solution: Coefficient of Variation (CV)
+CV=StandardDeviationofMonthlyIncome
+MeanMonthlyIncome
+•CV <0.3 = Stable income (±30% variability acceptable)
+•0.3< CV <0.7 = Moderate volatility (risky but manageable)
+•CV >0.7 = Highly volatile (unpredictable, high default risk)
+Example:
+Applicant A: Monthly income [50K, 52K, 48K, 51K, 50K, 52K] Mean = 50.5K, SD
+= 1.5K, CV = 0.03 (very stable)
+Applicant B: Monthly income [50K, 15K, 60K, 40K, 55K, 35K] Mean = 42.5K, SD
+= 17.8K, CV = 0.42 (moderate volatility)
+Applicant B is riskier despite similar average income.
+4.2 Sawtooth Analysis: Savings Buffer Detection
+Pattern:Some people have a savings buffer. Money stays in account. Others live
+paycheck-to-paycheck: money arrives, immediately spent to near-zero.
+Visual Pattern (Sawtooth):
+1Day 1: Balance 500 ( baseline )
+2Day 7: Income arrives -> Balance 2500
+3Day 8 -14: Spending -> Balance decreases
+4Day 15: Back to 500
+5Day 21: Income arrives -> Balance 2500
+6... repeat
+7
+8This is a SAWTOOTH : Sharp up , gradual down , repeat .
+Metric: Time to Zero (TTZ)
+Average number of days from income receipt to zero/near-zero balance.
+•TTZ<5 days = Paycheck-to-paycheck = No buffer = High risk
+KIIT University, Bhubaneswar Page 13Credit Risk Engine - IndiaPoC Specification
+•TTZ = 10-15 days = Some buffer = Lower risk
+•TTZ>20 days = Strong buffer = Lowest risk
+Why It Matters:If emergency occurs (medical expense, bike repair), can they
+absorb it? Or will they default on loan? TTZ predicts this.
+4.3 Affordability Index: Beyond Debt-to-Income
+The Problem:Traditional debt-to-income ratio fails for informal sector because:
+•Rent is often undocumented (paying landlord cash)
+•Existing debt spread across informal loans (moneylender, friends)
+•Income irregular and hard to document
+Our Solution: Derived Affordability Index
+AffordabilityIndex=EstimatedIncome−RentProxy−UtilityAvg−EMIProxy
+EstimatedIncome
+Component Extraction:
+Rent Proxy:Large recurring monthly debits (usually to individuals, not mer-
+chants)
+•Look for 5K-15K debits to same account each month
+•High confidence this is rent
+Utility Average:BBPS bill payments + SMS utilities
+•Electricity, water, mobile bills
+•Take 3-month average
+EMI Proxy:Search transaction narratives for keywords
+•Keywords: “Bajaj”, “Muthoot”, “HDB”, “HDFC”, “EMI”, “Bajaj Finserv”
+•Calculate average monthly EMI payment
+Logic: Affordability Threshold
+If requested EMI ¿ 40% of (Estimated Income - Rent - Utilities - Existing EMI),
+FLAG as high risk.
+Example:
+Estimated Income: 50,000 Rent Proxy: 10,000 Utilities: 2,000 Existing EMIs: 5,000
+Disposable Income: 50K - 10K - 2K - 5K = 33K
+KIIT University, Bhubaneswar Page 14Credit Risk Engine - IndiaPoC Specification
+Applicant requests 15,000 loan at 24 months Monthly EMI: 665
+Affordability Check: 665 / 33K = 2% of disposable income (safe, below 40%)
+Compare to applicant with 20K disposable income requesting same loan: 665 / 20K
+= 3.3% (still safe)
+But someone requesting 30K loan at 12 months (monthly EMI 2,650)? 2,650 / 33K
+= 8% of disposable income (safe)
+vs. 2,650 / 10K = 26.5% (getting risky)
+vs. 2,650 / 5K = 53% (FLAG: Unaffordable)
+4.4 Complete Feature Engineering Summary
+Feature Name Data Source Calculation Method Risk Signal
+income proxy UPI Max(recurring, P2P) Low = High risk
+stability index UPI CV (6-month inflows) High volatility = High
+digital intensity UPI Unique merchants count Low = High risk
+network centrality UPI Graph Eigenvector centrality Low = High risk
+time tozero SMS/UPI Days income→near-zero Low = High risk
+nsffrequency SMS Low balance alerts High = High risk
+billpayment latency BBPS Avg(Payment-Due date) High latency = High risk
+affordability index Derived (Inc-Rent-Utils-EMI)/Inc Low = High risk
+avgdaily balance SMS Mean daily balance Low = High risk
+KIIT University, Bhubaneswar Page 15Credit Risk Engine - IndiaPoC Specification
+5 Machine Learning Model Architecture
+5.1 Algorithm Selection: Why LightGBM
+The Decision:We chose LightGBM (Light Gradient Boosting Machine) over
+alternatives (XGBoost, Neural Networks, Logistic Regression).
+Why NOT Neural Networks:
+Neural networks excel at unstructured data (images, text, audio). For tabular
+financial data with:
+•Hundreds of features, thousands of samples
+•Missing values (thin-file borrowers lack some data)
+•Mixed feature types (continuous income, categorical employment)
+•Need for interpretability
+Neural networks are over-engineered and under-interpretable. They learn spurious
+patterns. They’re black boxes (bad for regulatory compliance).
+Why NOT XGBoost:
+XGBoost is powerful but slow. For large datasets (millions of applications), training
+is expensive. LightGBM uses leaf-wise tree growing (vs. level-wise in XGBoost),
+making it 10x faster.
+Why LightGBM:
+1.Native NaN Handling:Learns optimal split direction for missing values.
+No imputation needed. Preserves data distribution for thin-file borrowers who
+inherently have missing data.
+2.Speed:Leaf-wise growth makes training 10x faster than XGBoost. For
+monthly retraining pipelines, this matters.
+3.Categorical Support:Native handling of categorical features (employment
+type, gender, location). No need for one-hot encoding explosion.
+4.Interpretability:Tree structure enables SHAP explanations (faster than
+model-agnostic methods). Essential for regulatory compliance.
+5.Regularization:Built-in regularization prevents overfitting on thin-file bor-
+rowers (sparse feature space).
+KIIT University, Bhubaneswar Page 16Credit Risk Engine - IndiaPoC Specification
+5.2 Monotonic Constraints: Enforcing Fairness
+The Problem:Complex non-linear models can learn spurious correlations from
+noise.
+Example: If training data has noise where women with high income defaulted more
+(random chance), the model learns: “High income + Woman = Lower approval.”
+This is biased, incorrect, and legally indefensible.
+Our Solution: Monotonic Constraints
+We explicitly enforce that relationships between features and risk must be mono-
+tonic (always increasing or always decreasing).
+1constraints = [
+21, # income_proxy : Higher income always increases
+approval
+3-1, # stability_index : Higher volatility always
+decreases approval
+4-1, # nsf_frequency : More low balance alerts always
+decrease
+50, # age: No constraint (not monotonically related to
+default )
+61, # employment_years : More tenure always increases
+approval
+7-1, # bill_latency : Later payments always decrease
+approval
+8-1, # delinquency_count : More delinquencies always
+decrease
+9]
+10
+11model = lgb. LGBMClassifier (
+12n_estimators =200 ,
+13learning_rate =0.05 ,
+14max_depth =7,
+15monotone_constraints = constraints ,
+16verbose =-1
+17)
+18
+19model .fit( X_train , y_train )
+Effect:Model decision surface is provably fair. Better financial behavior always im-
+proves approval chances. Worse behavior always decreases chances. No exceptions
+due to noise.
+Regulatory Benefit:If auditor asks “Why was this person with high income
+rejected?” We can prove: “Their income was high, but 6 other negative factors
+(delinquency, low balance frequency, irregular income) outweighed it.” Auditor can
+verify each factor follows monotonic constraint.
+5.3 Probability Calibration: Isotonic Regression
+The Problem:Raw LightGBM output is not a probability. It’s a log-odds score.
+KIIT University, Bhubaneswar Page 17Credit Risk Engine - IndiaPoC Specification
+Model output: 0.35 = What does this mean? 35% chance of default? Not neces-
+sarily.
+Why This Matters:
+If model predicts “0.10 default probability” for 100 applicants, we expect 10 to
+default. But with uncalibrated model, maybe 5 default. Or 20. Model miscalibrated
+→Financial forecasting breaks→Provisions are wrong→Regulatory violations.
+Our Solution: Isotonic Regression
+1from sklearn . calibration import CalibratedClassifierCV
+2
+3# Train model first
+4model = lgb. LGBMClassifier (...)
+5model .fit( X_train , y_train )
+6
+7# Calibrate on validation set
+8calibrated_model = CalibratedClassifierCV (
+9model ,
+10method =’ isotonic ’, # Non - parametric , flexible
+11cv=’prefit ’
+12)
+13calibrated_model .fit(X_val , y_val )
+14
+15# Now: model . predict_proba () returns true probabilities
+16# If it predicts 0.10 , ~10 out of 100 actually default
+Why Isotonic (not Platt Scaling):
+Isotonic Regression: Non-parametric, fits flexible stepwise function Platt Scaling:
+Assumes sigmoid-shaped curve
+Credit scoring often has non-sigmoid distributions (bimodal, skewed). Isotonic
+handles this better.
+Evaluation Metric: Brier Score
+BrierScore=1
+NNX
+i=1(pi−yi)2
+Wherep i= predicted probability,y i= actual outcome (0 or 1)
+Target: Brier Score≤0.20 (well-calibrated model) - Below 0.10: Excellent calibra-
+tion - 0.10-0.20: Good calibration - Above 0.20: Poor calibration (untrustworthy
+probabilities)
+KIIT University, Bhubaneswar Page 18Credit Risk Engine - IndiaPoC Specification
+6 Explainability Engine: SHAP + Reason Codes
++ Counterfactuals
+6.1 SHAP: The Theoretical Foundation
+Foundation Theory:Cooperative game theory. Each feature’s “contribution” to
+final score is its marginal value in the coalition of all features.
+Intuition:Imagine a coalition of workers. One person’s “contribution” is how
+much less the team produces if they’re removed.
+In credit scoring: Income’s “contribution” to default risk is how much the model
+changes if income value changes.
+Example Breakdown:
+1Applicant : Rajesh , 28- year -old delivery agent
+2Predicted Score : 0.35 ( REJECTED , threshold 0.50)
+3Base Value ( model average ): 0.45
+4
+5SHAP Decomposition :
+6Base Value : 0.45
+7+ Income ( 50K ): +0.08 -> 0.53 ( reducing risk )
+8+ Stability (CV =0.12) : +0.10 -> 0.63 ( reducing risk )
+9+ Digital Intensity (8): +0.05 -> 0.68 ( reducing risk )
+10- Employment Years (1): -0.05 -> 0.63 ( increasing risk )
+11- NSF Frequency (5): -0.15 -> 0.48 ( increasing risk )
+12- Bill Latency (3 days ): -0.08 -> 0.40 ( increasing risk )
+13- Affordability (0.35) : -0.06 -> 0.34 ( increasing risk )
+14- Network Centrality (0.3) : -0.01 -> 0.33 ( minimal impact )
+15
+16Final Prediction : 0.33 0.35 REJECTED
+Why SHAP is Superior:
+•Theoretically Sound:Grounded in game theory, mathematically rigorous
+•Local Interpretability:Explains THIS specific decision (not global model)
+•Feature Attribution:Which features mattered most?
+•TreeExplainer Speed:Optimized for tree models (10x faster than Ker-
+nelSHAP)
+•Intuitive Visualizations:Waterfall charts that borrowers understand
+6.2 Reason Codes: From SHAP Values to Human Lan-
+guage
+The Challenge:Raw SHAP values (“income: -0.45”) mean nothing to borrowers.
+Solution: Semantic Mapping Pipeline
+KIIT University, Bhubaneswar Page 19Credit Risk Engine - IndiaPoC Specification
+1.Step 1: Filter Negative Factors
+1negative_shap = [
+2( nsf_frequency , -0.15) ,
+3( delinquency_count , -0.10) ,
+4( affordability_index , -0.06) ,
+5( employment_years , -0.05) ,
+6]
+2.Step 2: Rank by Magnitude
+1ranked = sorted ( negative_shap , key= lambda x: abs(x [1]) ,
+reverse = True )
+2# nsf_frequency ( -0.15) > delinquency_count ( -0.10) > ...
+3.Step 3: Semantic Mapping
+1mapping = {
+2’nsf_frequency ’: ’Frequent low balance alerts
+indicate cash flow stress ’,
+3’delinquency_count ’: ’History of payment failures
+observed ’,
+4’affordability_index ’: ’Limited disposable income for
+new loan ’,
+5’employment_years ’: ’Limited employment tenure ’,
+6’bill_payment_latency ’: ’Tendency to pay bills late ’,
+7’network_centrality ’: ’Limited formal financial
+integration ’,
+8’stability_index ’: ’Income sources appear irregular ’,
+9}
+10
+11reasons = [ mapping [ feat ] for feat , _ in ranked [:3]]
+4.Step 4: Borrower-Facing Output
+KIIT University, Bhubaneswar Page 20Credit Risk Engine - IndiaPoC Specification
+Why Your Application Was Not Approved
+Based on our analysis of your financial data, your approval probability is 0.35
+(we approve applicants with probability ¿ 0.50).
+Top Factors Affecting Your Decision:
+1.Frequent Low Balance Alerts(Impact: -0.15) Your account frequently
+shows “Low Balance” SMS alerts, indicating cash flow stress even though
+your overall income is adequate. This suggests you may struggle to meet new
+loan obligations.
+2.History of Payment Failures(Impact: -0.10) Our analysis of your
+transaction data shows 2 instances of late bill payments or bounced transac-
+tions, indicating potential repayment challenges.
+3.Limited Disposable Income(Impact: -0.06) After accounting for rent,
+utilities, and existing EMIs, your remaining disposable income is only 35% of
+gross income. A new EMI could strain your finances.
+What You Can Do:
+See “Paths to Approval” below for specific actions to improve your eligibility.
+6.3 Counterfactual Explanations: Paths to Approval
+Problem with SHAP Alone:It explains why rejection happened. It doesn’t tell
+user how to fix it.
+Solution: DiCE (Diverse Counterfactual Explanations)
+Core Idea:Find alternative feature values where model predicts APPROVAL,
+while minimizing distance to actual values.
+Optimization Problem:
+Minimize: Distance(original features, counterfactual features) Subject to: - Model
+predicts APPROVED (score ¿ 0.50) - Features are realistic (income±20%, balance
+¿ 0) - Features are actionable (no changing age/gender/past defaults)
+Implementation:
+1import dice_ml
+2
+3# Initialize DiCE
+4d = dice_ml . Data (
+5dataframe = X_train ,
+6continuous_features =[’ income ’, ’stability ’, ’
+affordability ’],
+7outcome_name =’ default ’
+8)
+9
+10m = dice_ml . Model ( model = calibrated_model , backend =’ sklearn ’)
+11exp = dice_ml . Dice (d, m)
+12
+13# Generate counterfactuals for Rajesh
+14counterfactuals = exp. generate_counterfactuals (
+15rejected_applicant_data ,
+16total_CFs =3, # 3 different paths
+KIIT University, Bhubaneswar Page 21Credit Risk Engine - IndiaPoC Specification
+17desired_class =’ opposite ’, # REJECTED -> APPROVED
+18features_to_vary =[’ affordability_index ’, ’nsf_frequency ’,
+19’delinquency_count ’, ’income_proxy ’],
+20immutable_features =[’age ’, ’gender ’, ’location ’,
+21’delinquency_history ’], # Can ’t
+change
+22permitted_range ={
+23’income_proxy ’: [ current_income , current_income *
+1.2]
+24}
+25)
+26
+27# Extract and present paths
+28for i, cf in enumerate ( counterfactuals . cf_examples_list [0].
+final_cfs_df . iterrows ()):
+29print (f" Path {i}: {cf [1]. to_dict () }")
+Example Paths to Approval:
+Paths to Approval
+Your current approval probability: 0.35. To get approved, here are 3 realistic
+paths:
+Path A: Focus on Cash Flow Management- Current NSF frequency:
+5 alerts/month - Target NSF frequency: 2 alerts/month - Action: Maintain
+minimum balance of 5,000 at all times - New approval probability: 0.62
+APPROVED
+Path B: Clear Recent Payment Defaults- Current delinquency count:
+2 - Target delinquency count: 0 - Action: Your late bills from past 3 months.
+Clear them. - Timeline: Achievable within 30 days - New approval probabil-
+ity: 0.55 APPROVED
+Path C: Increase Income (if possible)- Current income: 50,000/month -
+Target income: 60,000/month (+20%) - Action: Apply for additional Zoma-
+to/Swiggy shifts in evenings - Timeline: 2-3 months - New approval proba-
+bility: 0.58 APPROVED
+Why This Matters:Borrowers aren’t passive victims. They have agency. We
+show concrete, achievable paths. This increases financial inclusion and borrower
+satisfaction.
+KIIT University, Bhubaneswar Page 22Credit Risk Engine - IndiaPoC Specification
+7 Full-Stack Architecture
+7.1 Microservices with FastAPI: System Design
+Design Philosophy:Python native to minimize impedance mismatch between
+ML (Python) and production (also Python).
+Service Decomposition:
+1.Gateway Service(FastAPI)
+•Authentication: JWT tokens
+•Rate limiting: Redis-backed, 1000 req/min per IP
+•Request routing to appropriate service
+•Input validation: Pydantic schemas
+2.LOS Service(Loan Origination System)
+•Application state machine: DRAFT→SUBMITTED→UNDERWRIT-
+ING→APPROVED/REJECTED
+•KFS (Key Fact Statement) calculation: Real-time APR computation
+•Risk pricing: Mapping model score to interest rate premium
+3.Inference Service(CPU-Intensive)
+•LightGBM model loading and inference
+•SHAP explainer: Feature importance calculation
+•DiCE engine: Counterfactual generation
+•ISOLATED from other services (no I/O blocking)
+4.Async External APIs
+•CIBIL pull (if applicant has credit history)
+•SMS scraping service
+•KYC verification (eKYC with Aadhaar)
+•Payment gateway (e-NACH, UPI)
+Why Inference is Isolated:
+Model inference is CPU-intensive (especially SHAP calculations). If it runs in main
+thread, I/O requests (API calls, database queries) block. By isolating inference, we
+can:
+•Scale inference horizontally (multiple GPU instances)
+•Keep API responsive for other operations
+•Use async/await efficiently
+KIIT University, Bhubaneswar Page 23Credit Risk Engine - IndiaPoC Specification
+7.2 Database Schema: Compliance-First Design
+PostgreSQL Design Principles:
+1-- PRIMARY : Applicant Data ( Encrypted at application level )
+2CREATE TABLE users (
+3id SERIAL PRIMARY KEY ,
+4pan VARCHAR (10) ENCRYPTED , -- PII: encrypted AES -256
+5aadhaar VARCHAR (12) ENCRYPTED , -- PII: encrypted AES -256
+6phone VARCHAR (10) ENCRYPTED ,
+7email VARCHAR (100) ENCRYPTED ,
+8created_at TIMESTAMP ,
+9updated_at TIMESTAMP ,
+10consent_given BOOLEAN DEFAULT FALSE
+11);
+12
+13-- Application State Machine ( Core business logic )
+14CREATE TABLE loan_applications (
+15id SERIAL PRIMARY KEY ,
+16user_id INT REFERENCES users (id),
+17age INT ,
+18income FLOAT ,
+19employment_type VARCHAR (50) ,
+20income_stability FLOAT , -- stability_index
+21affordability_index FLOAT ,
+22delinquency_count INT ,
+23nsf_frequency INT ,
+24bill_payment_latency FLOAT ,
+25digital_intensity INT ,
+26network_centrality FLOAT ,
+27
+28status VARCHAR (20) , -- DRAFT / SUBMITTED / UNDERWRITING /
+APPROVED / REJECTED
+29requested_amount FLOAT ,
+30approved_amount FLOAT ,
+31approved_rate FLOAT , -- Interest rate approved
+32kfs_json JSONB , -- KFS snapshot with hash
+33
+34created_at TIMESTAMP ,
+35updated_at TIMESTAMP ,
+36decision_timestamp TIMESTAMP -- When decision made
+37);
+38
+39-- IMMUTABLE AUDIT LOG ( Single source of truth for decisions )
+40CREATE TABLE audit_log (
+41id SERIAL PRIMARY KEY ,
+42application_id INT REFERENCES loan_applications (id) NOT
+NULL ,
+43decision VARCHAR (20) NOT NULL , -- APPROVED or REJECTED
+44approval_probability FLOAT NOT NULL ,
+45shap_values JSONB NOT NULL , -- Raw SHAP values ( audit
+trail )
+KIIT University, Bhubaneswar Page 24Credit Risk Engine - IndiaPoC Specification
+46reason_codes JSONB NOT NULL , -- Reason codes shown to
+borrower
+47model_version VARCHAR (50) NOT NULL ,
+48model_auc FLOAT , -- Model performance at
+time of decision
+49timestamp TIMESTAMP NOT NULL DEFAULT NOW () ,
+50
+51INDEX idx_app_id ( application_id ),
+52INDEX idx_decision ( decision ),
+53INDEX idx_timestamp ( timestamp ),
+54INDEX idx_model_version ( model_version )
+55);
+56
+57-- DPDP COMPLIANCE : Consent Tracking
+58CREATE TABLE consent_ledger (
+59id SERIAL PRIMARY KEY ,
+60application_id INT REFERENCES loan_applications (id),
+61user_id INT REFERENCES users (id),
+62purpose VARCHAR (100) NOT NULL , -- credit_assessment /
+fraud / marketing
+63consent_given BOOLEAN NOT NULL ,
+64granted_timestamp TIMESTAMP NOT NULL ,
+65revoked_at TIMESTAMP NULL , -- When consent revoked (
+if ever )
+66
+67INDEX idx_user ( user_id ),
+68INDEX idx_purpose ( purpose ),
+69INDEX idx_revoked ( revoked_at )
+70);
+71
+72-- Model Version Tracking ( Governance )
+73CREATE TABLE model_versions (
+74id SERIAL PRIMARY KEY ,
+75version_name VARCHAR (50) UNIQUE NOT NULL , -- v1 .0, v1 .1,
+v2 .0
+76model_path VARCHAR (255) NOT NULL ,
+77training_date TIMESTAMP NOT NULL ,
+78training_data_size INT ,
+79auc_score FLOAT NOT NULL ,
+80brier_score FLOAT NOT NULL ,
+81constraints JSON NOT NULL , -- Monotonic constraints
+applied
+82feature_importance JSON , -- Top features
+83active BOOLEAN DEFAULT FALSE , -- Only one active at a
+time
+84created_at TIMESTAMP NOT NULL
+85);
+86
+87-- Time - Partitioned Data ( Retention Policy )
+88CREATE TABLE sms_logs (
+89id SERIAL PRIMARY KEY ,
+KIIT University, Bhubaneswar Page 25Credit Risk Engine - IndiaPoC Specification
+90application_id INT ,
+91user_id INT ,
+92sms_text VARCHAR (500) ,
+93parsed_features JSON ,
+94timestamp TIMESTAMP
+95) PARTITION BY RANGE ( timestamp );
+96
+97-- Partitions : One per month , auto - dropped after 6 months
+98CREATE TABLE sms_logs_2026_01 PARTITION OF sms_logs
+99FOR VALUES FROM ( ’2026 -01 -01 ’) TO ( ’2026 -02 -01 ’);
+100-- DROP TABLE sms_logs_2025_07 ; -- Automatic via retention
+policy
+Key Design Decisions:
+1.Immutable audit log:No UPDATE operations. Only INSERT. Proves
+decision history. Cannot be tampered with.
+2.Time Partitioning:Easy data retention/purging. Drop entire partition
+when retention period expires.
+3.Consent Ledger:Every data use tracked. DPDP compliance requires prov-
+ing user consented.
+4.Shadow Ledger:Separate transaction table records intent/confirmation.
+Not legal record (RE’s bank statement is).
+5.Encrypted PII:All personal data encrypted at application level (AES-256)
+before DB insertion.
+6.Model Versioning:Every decision tied to specific model version. Enables
+auditing.
+7.3 Offline-First Frontend: Next.js PWA
+Technology Choice:Progressive Web App (PWA) using Next.js.
+Why PWA:
+Target demographic (informal sector workers in Tier-3 cities) has:
+•Unreliable internet (2G, 3G networks)
+•Low-end Android devices (5K-15K phones)
+•Spotty connectivity (frequent dropouts)
+PWA solves this by:
+•Service Workers cache app shell (works offline)
+•Background sync queues requests (data syncs when online)
+KIIT University, Bhubaneswar Page 26Credit Risk Engine - IndiaPoC Specification
+•IndexedDB stores form data locally
+•50KB JavaScript (vs 500KB+ traditional apps)
+Architecture:
+1// Service Worker : Cache app shell
+2// On first load , caches HTML /CSS/JS
+3// Subsequent loads : Instant ( from cache )
+4// Offline : App still works ( cached UI)
+5
+6// Background Sync :
+7// User fills form offline
+8// Data stored in IndexedDB
+9// When connectivity returns , syncs to backend
+10// If fails , retries with exponential backoff
+11
+12// Progressive Enhancement :
+13// Core functionality : Works everywhere
+14// Advanced features : Gracefully degrade on slow networks
+7.4 Security Architecture
+Encryption:
+All PII (PAN, Aadhaar, phone) encrypted at application level:
+•Algorithm: AES-256
+•Keys: Managed separately from database (not in code)
+•At-Rest: Data encrypted in DB
+•In-Transit: HTTPS enforced
+API Security:
+•Internal Network:Inference service NOT exposed to internet. Only acces-
+sible via private Docker network from Gateway.
+•CORS Policies:Strict. Only frontend domain allowed.
+•Rate Limiting:Redis-backed. 1000 req/min per IP, 10000 req/min per user.
+•DDoS Prevention:CloudFlare WAF, IP reputation checking.
+Input Validation:
+•Pydantic schemas enforce type checking
+•Range validation: age 18-100, income ¿ 0, etc.
+•String sanitization: Prevent SQL injection, XSS
+•File upload security: Virus scan, size limits
+KIIT University, Bhubaneswar Page 27Credit Risk Engine - IndiaPoC Specification
+8 Operationalization & Monitoring
+8.1 Drift Detection: Two Types
+Data Drift (Covariate Shift):
+Question: Has the distribution of applicants changed?
+Signals:
+•Younger applicants entering pool (median age drops from 35 to 25)
+•More women applicants (50% to 70%)
+•Different geographic distribution
+•Different employment types
+Detection: Population Stability Index (PSI)
+PSI=X
+(Recent%−Training%)×ln(Recent%/Training%)
+Interpretation:
+•PSI<0.1: No significant drift
+•0.1<PSI<0.25: Moderate drift (monitor)
+•PSI>0.25: Significant drift (retrain urgently)
+Concept Drift:
+Question: Has the relationship between features and risk changed?
+Signals:
+•Inflation: High income no longer protective (50K income is now low)
+•Economic shock: Unemployment spikes, default rates increase
+•Seasonal trends: Gig income drops during monsoon
+Detection: Monitor actual vs. predicted default rates
+•If 1000 applicants predicted 5% default risk, expect 50 to default
+•If only 20 default: Model over-pessimistic (concept drift)
+•If 100 default: Model under-pessimistic (concept drift)
+KIIT University, Bhubaneswar Page 28Credit Risk Engine - IndiaPoC Specification
+8.2 Automated Retraining Pipeline
+Monthly Pipeline:
+1.Data Extraction:Pull last 90 days of approved/rejected applications
+2.Feature Engineering:Apply same transformations as training pipeline
+3.Model Training:Train LightGBM with monotonic constraints
+4.Calibration:Isotonic regression on validation set
+5.Validation:Compare AUC, Brier score against current model
+6.Promotion Decision:
+•If AUC improvement≥2%: Promote to production
+•Else: Keep current model
+7.Versioning:Store new model with version tag (v1.5, v1.6, etc.)
+8.Audit Log:Record retraining event
+Tools: Apache Airflow or Kubeflow (orchestrate pipeline)
+8.3 Fairness Auditing: Disparate Impact Analysis
+Requirement:Monthly audit of approval rates across protected classes.
+Four-Fifths Rule (Adverse Impact Standard):
+If approval rate for protected group<80% of reference group, FLAG bias.
+Example:
+•Men approved at 90%
+•Women approved at 70%
+•Ratio: 70/90 = 77.8%<80%→ADVERSE IMPACT DETECTED
+Action:
+1. Data scientist investigates: Is bias justified by risk?
+2. Compare default rates: Do women actually default more?
+3. If yes: Bias is justified (just reflects risk)
+4. If no: Algorithmic bias. Remediate (adjust training weights, retrain)
+KIIT University, Bhubaneswar Page 29Credit Risk Engine - IndiaPoC Specification
+9 Architectural Decisions: What We Built vs.
+Original Specification
+9.1 Simplified vs. Original (Trade-offs)
+What We REMOVED (with justification):
+1.Airflow Orchestration:Original had Apache Airflow. We use manual
+Python scripts with cron jobs. Justified: PoC doesn’t need enterprise sched-
+uler. Can upgrade to Airflow in Phase 2.
+2.Advanced Fairness Tools:Original specified fairness auditmodulewithDisparateImpactAnalysis.Wesimplified:
+MonthlymanualauditwithSQLqueries.CanautomateinPhase2.
+3.Real UPI Integration:Original assumed access to UPI transaction API. Not avail-
+able in PoC. We use synthetic UPI data (Faker) for demonstration. Justified: Account
+Aggregator framework not finalized yet.
+4.CIBIL Integration:Original assumed CIBIL API access. We mock it. Justified:
+Partnership not finalized in PoC.
+5.Kubernetes Orchestration:Original had K8s deployment. We use Docker Compose
+(single node). Justified: PoC doesn’t need horizontal scaling.
+What We KEPT (core functionality):
+•LightGBM with monotonic constraints
+•SHAP explainability
+•DiCE counterfactuals
+•PostgreSQL with compliance schema
+•Direct fund flow architecture
+•DPDP consent management
+•Immutable audit trails
+•RBI compliance checklist
+What We IMPROVED (my verdict):
+1.Simplified Feature Engineering:Original had 30+ features. We kept 9
+core features. Result: Faster training, easier interpretation, less data required
+for thin-file borrowers.
+2.Better Security Defaults:Original didn’t emphasize encryption. We made
+it mandatory for all PII at application layer.
+KIIT University, Bhubaneswar Page 30Credit Risk Engine - IndiaPoC Specification
+3.Clearer Audit Trail:Original had transaction ledgerscattered.Wecentralizedaudit logtableassinglesourceoftruthfordecisions.
+4.PWA for Low-End Devices:Original wasn’t explicit about offline support. We built
+Next.js PWA specifically for 2G networks and low-end Android.
+5.Explicit Compliance Mapping:Original didn’t clearly map features to RBI require-
+ments. We created explicit RBI Compliance Checklist (Section 10.2).
+KIIT University, Bhubaneswar Page 31Credit Risk Engine - IndiaPoC Specification
+10 Deliverables (14-Day Sprint)
+10.1 Phase 1 - ML Pipeline
+Feature engineering scripts (UPI, SMS, utility data extraction)
+LightGBM model with monotonic constraints (Target AUC≥0.73)
+Probability calibration (Isotonic Regression, Target Brier≤0.20)
+SHAP explainer (TreeExplainer) serialized for production
+Reason code generator (mapping SHAP→human language)
+DiCE counterfactual engine
+10.2 Phase 2 - Backend
+FastAPI server running on localhost:8000
+Endpoints: /predict, /explain, /counterfactual, /audit
+PostgreSQL with compliance schema (5 core tables)
+API latency ¡ 500ms for /predict
+Authentication (JWT tokens)
+Rate limiting (Redis)
+10.3 Phase 3 - Frontend
+Next.js PWA running on localhost:3000
+Application form (demographic + financial data)
+Results page with SHAP visualization
+Paths to approval (DiCE counterfactuals)
+Responsive mobile design
+Offline support (Service Workers + IndexedDB)
+KIIT University, Bhubaneswar Page 32Credit Risk Engine - IndiaPoC Specification
+10.4 Phase 4 - Documentation
+README (local setup, how to run)
+COMPLIANCE.md (RBI mapping, DPDP compliance)
+MODEL CARD.md (model details, limitations, training data)
+API DOCUMENTATION.md (endpoint specs, examples)
+ARCHITECTURE.md (system design, deployment)
+KIIT University, Bhubaneswar Page 33Credit Risk Engine - IndiaPoC Specification
+11 Scope Boundaries: What We Explicitly NOT
+Building
+Out of Scope Reason Post-PoC Phase
+Live CIBIL Integration Requires bureau partnership Phase 2 (partnership)
+Real UPI Data Access Account Aggregator framework not finalized Phase 2 (AA setup)
+USSD/SMS Interface Needs telecom partner integration Phase 2 (telecom partner)
+Multilingual UI English sufficient for PoC Phase 2 (i18n)
+Production Scaling Single-node sufficient for PoC Phase 3 (Kubernetes)
+Airflow Orchestration Manual scripts adequate for PoC Phase 2 (Airflow setup)
+Advanced Fairness Tools Manual audits sufficient for PoC Phase 2 (automated tools)
+Payment Gateway Integration Mock integration for PoC Phase 2 (real payment gateways)
+KIIT University, Bhubaneswar Page 34Credit Risk Engine - IndiaPoC Specification
+12 Conclusion
+This specification outlines acomplete, production-aware credit decision en-
+ginefor India’s informal economy.
+The Four Core Innovations:
+1.Smart Alternative Data:UPI transaction analysis (income, stability, af-
+fordability) for thin-file borrowers where CIBIL is unavailable
+2.Fair ML Architecture:LightGBM with monotonic constraints ensures bet-
+ter financial behavior always improves approval probability
+3.Explainability by Design:SHAP + reason codes + counterfactuals make
+every decision transparent and auditable
+4.Compliance Foundation:Direct fund flow, DPDP consent management,
+immutable audit trails, and RBI compliance built in from Day 1
+Problem Solved:
+We transform “You’re rejected” into “You’re rejected because X, Y, Z. To get
+approved, try A, B, or C.” This empowers borrowers and creates fair, transparent
+lending.
+Regulatory Achievement:
+This PoC proves that RBI’s explainability mandate is achievable. AI lending can be
+transparent, fair, and auditable. Not just marketing hype—engineered architecture.
+Financial Inclusion Impact:
+We bring 400 million informal sector workers into the formal lending system. No
+more “Sorry, you have no credit history.” Instead: “Your UPI transactions show
+50K stable income. Approved for 20K loan at 22% APR.”
+Final Acknowledgments
+This specification synthesizes:
+•RBI Digital Lending Guidelines (regulatory framework)
+•DPDP Act 2023 (privacy framework)
+•State-of-the-art ML explainability (SHAP, DiCE)
+•Production-grade software engineering (FastAPI, PostgreSQL, PWA)
+•Domain expertise in Indian lending ecosystem
+The result: Responsible AI for financial inclusion. Not theoretical. Engineered.
+Deployed. Auditable.
+KIIT University, Bhubaneswar Page 35

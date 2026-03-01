@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explainable Credit Risk Engine</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --background: #f8fafc;
+            --card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+        .card {
+            background-color: var(--card);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        h2 {
+            margin-top: 0;
+            color: var(--text-main);
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+        }
+        button {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            padding: 0.875rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 1rem;
+        }
+        button:hover {
+            background-color: #1d4ed8;
+        }
+        button:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
+        .section-title {
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin: 1.5rem 0 1rem;
+            letter-spacing: 0.05em;
+        }
+        
+        /* Results Styling */
+        #results-area {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .placeholder {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            min-height: 300px;
+            text-align: center;
+            padding: 1rem;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-weight: 700;
+            text-align: center;
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 1.125rem;
+            color: #fff;
+        }
+        .badge.APPROVED { background-color: var(--success); }
+        .badge.REJECTED { background-color: var(--danger); }
+        .badge.UNKNOWN { background-color: var(--text-muted); }
+        
+        .data-box {
+            background-color: #f8fafc;
+            border-radius: 8px;
+            padding: 1.5rem;
+            border: 1px solid #e2e8f0;
+        }
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+        .data-row:last-child {
+            margin-bottom: 0;
+            padding-top: 0.75rem;
+            border-top: 1px solid #cbd5e1;
+            font-weight: bold;
+        }
+        .list-items {
+            padding-left: 1.5rem;
+            margin: 0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .paths-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+        .path-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            font-size: 0.9rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .error-box {
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+            color: var(--danger);
+            padding: 1.5rem;
+            border-radius: 8px;
+        }
+        .json-viewer {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h2>Loan Application</h2>
+        <form id="loanForm">
+            
+            <div class="section-title">Borrower Details</div>
+            
+            <div class="form-group">
+                <label>User ID (Supabase UUID)</label>
+                <input type="text" id="user_id" required>
+            </div>
+
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="full_name" required value="Ramesh Naik">
+            </div>
+            <div class="form-group">
+                <label>PAN Number</label>
+                <input type="text" id="pan" required value="PQRSX9876L">
+            </div>
+            <div class="form-group">
+                <label>Loan Amount (₹)</label>
+                <input type="number" id="amount" required value="50000">
+            </div>
+
+            <div class="section-title">Alternative Data Features</div>
+            <div class="form-group">
+                <label>Upload Transaction Data (CSV)</label>
+                <input type="file" id="transaction_file" accept=".csv" required>
+                <small style="color: var(--text-muted); display: block; margin-top: 0.25rem;">Upload UPI transactions to automatically derive the required parameters according to the credit risk engine framework.</small>
+            </div>
+
+            <button type="submit" id="submitBtn">Submit Application</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Decision Output</h2>
+        <div id="results-area">
+            <div class="placeholder">Awaiting application submission...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Generate a cryptographically secure random UUID for User ID
+        document.getElementById('user_id').value = crypto.randomUUID(); 
+    });
+
+    // Helper to parse CSV into JSON array
+    function parseCSV(text) {
+        const lines = text.split('\n');
+        const result = [];
+        const headers = lines[0].split(',').map(h => h.trim());
+        
+        for (let i = 1; i < lines.length; i++) {
+            if (!lines[i].trim()) continue;
+            const obj = {};
+            // Simplistic CSV split
+            const currentline = lines[i].split(',');
+            
+            for (let j = 0; j < headers.length; j++) {
+                obj[headers[j]] = currentline[j] ? currentline[j].trim() : '';
+            }
+            result.push(obj);
+        }
+        return result;
+    }
+
+    document.getElementById('loanForm').addEventListener('submit', async function(event) {
+        event.preventDefault(); 
+        
+        const btn = document.getElementById('submitBtn');
+        const resultsArea = document.getElementById('results-area');
+        
+        btn.disabled = true;
+        btn.textContent = 'Analyzing Features...';
+        resultsArea.innerHTML = `<div class="placeholder" style="color: var(--primary);">Running backend ML Inference...</div>`;
+        
+        const fileInput = document.getElementById('transaction_file');
+        const file = fileInput.files[0];
+        
+        if (!file) {
+            alert('Please upload a transaction CSV.');
+            btn.disabled = false;
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            const csvText = e.target.result;
+            const transactionData = parseCSV(csvText);
+            
+            const payload = {
+                user_id: document.getElementById('user_id').value.trim(), 
+                pan: document.getElementById('pan').value.trim(),
+                aadhaar: null, 
+                full_name: document.getElementById('full_name').value.trim(),
+                amount: parseFloat(document.getElementById('amount').value),
+                transaction_data: transactionData
+            };
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/apply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+
+                if (!response.ok) {
+                    const errorDetail = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
+                    throw new Error(errorDetail || `HTTP Error ${response.status}`);
+                }
+                
+                renderResults(data);
+
+            } catch (error) {
+                resultsArea.innerHTML = `
+                    <div class="error-box">
+                        <h3 style="margin-top:0; font-size: 1rem;">Backend Error</h3>
+                        <p style="font-family: monospace; font-size: 0.9rem; background: #fff; padding: 10px; border-radius: 4px; border: 1px solid #fecaca; word-break: break-all;">
+                            ${error.message}
+                        </p>
+                    </div>
+                `;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Submit Application';
+            }
+        };
+        
+        reader.readAsText(file);
+    });
+
+    function renderResults(data) {
+        const resultsArea = document.getElementById('results-area');
+        const decision = data.decision || 'UNKNOWN';
+        let htmlContent = `<div class="badge ${decision}">Status: ${decision}</div>`;
+
+        // ------------------ APPROVED ------------------
+        if (decision === 'APPROVED') {
+            const kfs = data.kfs || {};
+            const prob = data.approval_probability ? (data.approval_probability * 100).toFixed(1) : 'N/A';
+            
+            htmlContent += `
+                <div class="data-box">
+                    <h3 style="margin-top:0; font-size: 1rem; color: var(--success);">Key Fact Statement (KFS)</h3>
+                    <div class="data-row"><span>Approval Probability:</span> <span>${prob}%</span></div>
+                    <div class="data-row"><span>Interest Rate p.a.:</span> <span>${kfs.interest_rate_pa || 'N/A'}%</span></div>
+                    <div class="data-row"><span>All-Inclusive APR:</span> <span>${kfs.apr || 'N/A'}%</span></div>
+                    <div class="data-row"><span>Total Repayment:</span> <span>₹${kfs.total_repayment || 'N/A'}</span></div>
+                    <div class="data-row"><span>Monthly EMI:</span> <span>₹${kfs.monthly_emi || 'N/A'}</span></div>
+                </div>
+            `;
+        } 
+        // ------------------ REJECTED ------------------
+        else if (decision === 'REJECTED') {
+            const reasons = data.reasons || ['Application did not meet minimum criteria.'];
+            let reasonsHtml = `<ul class="list-items" style="color: var(--danger);">`;
+            reasons.forEach(reason => reasonsHtml += `<li>${reason}</li>`);
+            reasonsHtml += `</ul>`;
+
+            htmlContent += `
+                <div class="data-box" style="border-color: #fecaca; background-color: #fef2f2;">
+                    <h3 style="margin-top:0; font-size: 1rem; color: var(--danger);">Reasons for Rejection</h3>
+                    ${reasonsHtml}
+                </div>
+            `;
+
+            if (data.paths_to_approval && Array.isArray(data.paths_to_approval) && data.paths_to_approval.length > 0) {
+                let pathsHtml = `<div class="paths-container">`;
+                
+                // FIXED PARSING: Loop through the array of paths, and then loop through the keys inside each path.
+                data.paths_to_approval.forEach((path, index) => {
+                    pathsHtml += `
+                        <div class="path-card">
+                            <strong style="display:block; margin-bottom: 0.5rem; color: var(--primary);">Option ${index + 1}</strong>
+                            <ul class="list-items" style="margin:0; padding-left: 1.2rem;">
+                    `;
+                    
+                    for (const [featureKey, featureData] of Object.entries(path)) {
+                        if (featureData && featureData.advice) {
+                            pathsHtml += `<li>${featureData.advice}</li>`;
+                        }
+                    }
+                    
+                    pathsHtml += `</ul></div>`;
+                });
+                pathsHtml += `</div>`;
+
+                htmlContent += `
+                    <div style="margin-top: 1rem;">
+                        <h3 style="margin-bottom: 0.5rem; font-size: 1rem; color: var(--primary);">Paths to Approval</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top:0;">Complete ANY ONE of the following options to get approved:</p>
+                        ${pathsHtml}
+                    </div>
+                `;
+            }
+        }
+
+        // ------------------ RAW JSON OUTPUT ------------------
+        htmlContent += `
+            <div class="data-box" style="margin-top: 1.5rem; border-color: #cbd5e1;">
+                <h3 style="margin-top:0; font-size: 1rem; color: var(--primary);">Feature Impact vs Decision Hyperplane (Probability Curve)</h3>
+                <canvas id="shapChart" width="400" height="200"></canvas>
+            </div>
+            
+            <div style="margin-top: 1.5rem; border-top: 1px solid #e2e8f0; padding-top: 1.5rem;">
+                <h3 style="font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); margin: 0;">Parsed JSON Response</h3>
+                <pre class="json-viewer">${JSON.stringify(data, null, 2)}</pre>
+            </div>
+        `;
+
+        resultsArea.innerHTML = htmlContent;
+
+        // Render the SHAP / Probability Curve vs Hyperplane
+        if (data.shap_values) {
+            const ctx = document.getElementById('shapChart').getContext('2d');
+            const labels = Object.keys(data.shap_values);
+            const values = Object.values(data.shap_values);
+            const pointColors = values.map(v => v > 0 ? 'rgba(220, 38, 38, 1)' : 'rgba(22, 163, 74, 1)');
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Default Risk impact',
+                            data: values,
+                            borderColor: 'rgba(37, 99, 235, 0.8)',
+                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                            borderWidth: 2,
+                            pointBackgroundColor: pointColors,
+                            pointRadius: 6,
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Model Hyperplane (Baseline)',
+                            data: Array(labels.length).fill(0),
+                            borderColor: 'rgba(0,0,0,0.5)',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Risk Impact (SHAP value)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+    }
+</script>
+</body>
+</html>
