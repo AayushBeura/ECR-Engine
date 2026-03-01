@@ -28,7 +28,8 @@ def create_application(client: Client, user_id: str, amount: float, status: str 
     }
     if features:
         for key in ['income_stability', 'affordability_index', 'nsf_frequency',
-                     'bill_payment_latency', 'network_centrality']:
+                     'bill_payment_latency', 'network_centrality',
+                     'time_to_zero_norm', 'debt_to_income', 'txn_freq_norm']:
             if key in features:
                 data[key] = features[key]
     return client.table("loan_applications").insert(data).execute()

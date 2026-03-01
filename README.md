@@ -89,8 +89,13 @@ Built with **FastAPI**, **Supabase (PostgreSQL)**, **LightGBM**, **SHAP**, and *
 - Implements the **RBI Nodal Bypass** architecture
 - Records disbursement `PENDING` intent → updates to `SUCCESS` on bank confirmation
 - Ensures the fintech platform never touches borrower funds
+- *Hardened: Wrapped with fallback handlers for network disconnects.*
 
-### 9. API Endpoints
+### 9. Privacy & Consent Ledger (DPDP Act)
+- Integration with Supabase to record, query, and revoke digital consent.
+- Enforces data minimization via active `pg_cron` jobs scheduling the deletion of unneeded SMS/UPI transaction logs older than 6 months.
+
+### 10. API Endpoints
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/` | Health check |
@@ -98,6 +103,9 @@ Built with **FastAPI**, **Supabase (PostgreSQL)**, **LightGBM**, **SHAP**, and *
 | `POST` | `/apply` | Full loan application with encryption, audit, KFS |
 | `POST` | `/counterfactuals` | Generate "Paths to Approval" for any feature set |
 | `GET` | `/config/generate-key` | Generate a new Fernet encryption key |
+| `POST` | `/consent/record` | Record user DPDP consent |
+| `GET` | `/consent/{user_id}` | Query active consent records |
+| `POST` | `/consent/revoke` | Revoke active consent |
 
 ---
 
@@ -108,9 +116,6 @@ Per the project blueprint document, the following components are not yet built:
 ### Backend
 | Component | Description | Priority |
 |-----------|-------------|----------|
-| **Consent Ledger API** | Endpoints to record, query, and revoke user consent (DPDP Act §6) | High |
-| **Data Purging (pg_cron)** | Auto-delete SMS/UPI logs older than 6 months for "purpose limitation" | High |
-| **SMS/UPI Parsing** | Regex-based parser to extract features from raw SMS strings and UPI transaction logs | Medium |
 | **Supabase Auth (JWT)** | Protect endpoints with Supabase JWT tokens instead of open access | Medium |
 | **Drift Detection (PSI)** | Monitor Population Stability Index; alert if PSI > 0.25 for retraining | Medium |
 | **Fairness Audit** | Monthly adverse impact check (approval rate for protected groups < 80% of reference → flag) | Low |

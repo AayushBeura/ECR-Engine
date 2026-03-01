@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Any
 import os
 import uuid
 from dotenv import load_dotenv
@@ -10,13 +10,14 @@ from utils.encryption import encrypt_data, generate_key
 from utils.supabase_utils import get_supabase_client, insert_profile, create_application
 from utils.shadow_ledger import initiate_disbursement
 from services.credit_service import CreditService
+from services.consent_service import record_consent, query_consent, revoke_consent
 
 load_dotenv()
 
 app = FastAPI(title="Explainable Credit Risk Engine API")
 
 # Flag to bypass the Supabase database for initial PoC testing
-MOCK_DB = False
+MOCK_DB = os.getenv("MOCK_DB", "False").lower() in ("true", "1", "t")
 
 # CORS — allow all origins for standalone HTML frontend
 app.add_middleware(
@@ -60,6 +61,16 @@ class CounterfactualRequest(BaseModel):
 class PredictRequest(BaseModel):
     features: Dict[str, float]
 
+class ConsentRecordRequest(BaseModel):
+    user_id: str
+    purpose: str
+    purpose_details: Optional[str] = ""
+    metadata: Optional[Dict[str, Any]] = None
+
+class ConsentRevokeRequest(BaseModel):
+    user_id: str
+    purpose: str
+
 # --- Endpoints ---
 
 @app.get("/")
@@ -88,8 +99,7 @@ async def apply_for_loan(request: ApplicationRequest):
         encryption_key = os.getenv("ENCRYPTION_KEY")
         
         if not encryption_key:
-            encryption_key = generate_key()
-            print(f"WARNING: ENCRYPTION_KEY not set. Using temporary key.")
+            raise HTTPException(status_code=500, detail="Server Configuration Error: ENCRYPTION_KEY is missing.")
 
         # 1. Encrypt PII
         pan_enc = encrypt_data(request.pan, encryption_key)
@@ -185,3 +195,25 @@ async def get_counterfactuals(request: CounterfactualRequest):
 def get_new_key():
     """Generate a new encryption key for .env setup."""
     return {"encryption_key": generate_key()}
+
+@app.post("/consent/record")
+def api_record_consent(request: ConsentRecordRequest):
+    """Record user consent (DPDP Act)."""
+    success = record_consent(request.user_id, request.purpose, request.purpose_details, request.metadata)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to record consent")
+    return {"status": "success", "message": "Consent recorded"}
+
+@app.get("/consent/{user_id}")
+def api_query_consent(user_id: str, purpose: Optional[str] = None):
+    """Query active consent records."""
+    records = query_consent(user_id, purpose)
+    return {"status": "success", "data": records}
+
+@app.post("/consent/revoke")
+def api_revoke_consent(request: ConsentRevokeRequest):
+    """Revoke user consent."""
+    success = revoke_consent(request.user_id, request.purpose)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to revoke consent")
+    return {"status": "success", "message": "Consent revoked"}
