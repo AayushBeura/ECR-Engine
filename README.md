@@ -298,6 +298,15 @@ Expected output:
 uvicorn main:app --reload
 ```
 
+### 7. Start the frontend server
+
+```bash
+cd project_format_fresh
+npm install
+npm run build
+npm start
+```
+
 The API will be available at **http://127.0.0.1:8000**  
 Swagger docs at **http://127.0.0.1:8000/docs**
 
