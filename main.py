@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Dict, Optional, List, Any
+import logging
 import os
 import uuid
 from dotenv import load_dotenv
@@ -19,13 +20,16 @@ app = FastAPI(title="Explainable Credit Risk Engine API")
 # Flag to bypass the Supabase database for initial PoC testing
 MOCK_DB = os.getenv("MOCK_DB", "False").lower() in ("true", "1", "t")
 
-# CORS — allow all origins for standalone HTML frontend
+# CORS — restrict to configured frontend origin(s)
+_raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+ALLOWED_ORIGINS: List[str] = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 credit_service = CreditService()
@@ -193,7 +197,9 @@ async def get_counterfactuals(request: CounterfactualRequest):
 
 @app.get("/config/generate-key")
 def get_new_key():
-    """Generate a new encryption key for .env setup."""
+    """Generate a new encryption key for .env setup. Development only."""
+    if os.getenv("APP_ENV", "production").lower() != "development":
+        raise HTTPException(status_code=404, detail="Not found")
     return {"encryption_key": generate_key()}
 
 @app.post("/consent/record")

@@ -68,9 +68,9 @@ def generate_dataset():
     # --- STEP 2: Generate income inflows conditioned on risk ---
     # High-risk borrowers get WIDER income swings → higher CV → higher income_stability value
     volatility_scale = 0.15 + 0.45 * prelim_risk_norm  # range: 0.15 (stable) to 0.60 (volatile)
-    monthly_inflows = np.column_stack([
-        monthly_income * (1 + np.random.normal(0, volatility_scale)) for _ in range(6)
-    ])
+    # Shape: (N, 6) — each borrower row gets 6 monthly inflows with their individual volatility
+    noise = np.random.normal(0, volatility_scale[:, np.newaxis], size=(N, 6))
+    monthly_inflows = monthly_income[:, np.newaxis] * (1 + noise)
     monthly_inflows = np.maximum(monthly_inflows, 0)  # no negative inflows
     
     # --- ENGINEERED FEATURES ---
