@@ -173,16 +173,16 @@ MinorSem6/
 ### 1. Clone & Create Virtual Environment
 
 ```bash
-git clone <your-repo-url>
-cd MinorSem6
+git clone https://github.com/AayushBeura/ECR-Engine.git
+cd ECR-Engine
 
-python -m venv venv
+python -m venv .venv
 
 # Windows
-.\venv\Scripts\activate
+.venv\Scripts\Activate.ps1
 
 # macOS / Linux
-source venv/bin/activate
+source .venv/bin/activate
 ```
 
 ### 2. Install Dependencies
