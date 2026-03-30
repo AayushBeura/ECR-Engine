@@ -4,6 +4,8 @@ An **explainability-first** lending platform backend built for India's informal 
 
 Built with **FastAPI**, **Supabase (PostgreSQL)**, **LightGBM**, **SHAP**, and **DiCE**.
 
+> **Latest**: See [CHANGELOG.md](CHANGELOG.md) for recent bug fixes and improvements.
+
 ---
 
 ## Table of Contents
@@ -306,7 +308,7 @@ uvicorn main:app --reload
 ### 7. Start the frontend server
 
 ```bash
-cd project_format_fresh
+cd frontend
 npm install
 npm run build
 npm start

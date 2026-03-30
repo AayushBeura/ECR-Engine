@@ -1,6 +1,9 @@
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyc
+*.pyo
 
 # Environments
 .env
@@ -11,15 +14,44 @@ ENV/
 env.bak/
 venv.bak/
 
+# IDE / Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
 # GSD / Agent Data
 .gsd/
 .agent/
 .gemini/
 files.txt
 
-# VS Code
-.vscode/
-
-# Datasets
+# Generated Data & Models
 *.csv
 *.xlsx
+*.pkl
+*.joblib
+
+# Logs
+*.log
+
+# Documentation
+docs/
+
+# Scripts
+scripts/
+
+# Project Config
+GSD-STYLE.md
+PROJECT_RULES.md
+model_capabilities.yaml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/

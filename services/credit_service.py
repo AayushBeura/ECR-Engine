@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import shap
 import json
+import logging
 from typing import Dict, List, Optional
 from utils.supabase_utils import get_supabase_client
 
@@ -293,9 +294,8 @@ class CreditService:
             return paths
             
         except Exception as e:
-            import traceback
-            traceback.print_exc()
-            return [{"error": f"Could not generate counterfactuals: {str(e)}"}]
+            logging.exception("DiCE counterfactual generation failed")
+            raise ValueError(f"Could not generate counterfactuals: {str(e)}") from e
 
     def _get_advice(self, feature: str, current: float, target: float) -> str:
         """Convert feature changes to human-readable advice."""
@@ -313,6 +313,10 @@ class CreditService:
 
     def calculate_kfs(self, amount: float, default_probability: float) -> Dict:
         """Calculates Key Fact Statement (KFS) as per RBI guidelines."""
+        if amount <= 0:
+            raise ValueError(f"Loan amount must be positive, got {amount}")
+        if not (0.0 <= default_probability <= 1.0):
+            raise ValueError(f"default_probability must be in [0, 1], got {default_probability}")
         approval_probability = 1.0 - default_probability
         risk_premium = default_probability * 14.0  # 0-14% based on risk
         interest_rate = 12.0 + risk_premium  # Base 12% + premium
