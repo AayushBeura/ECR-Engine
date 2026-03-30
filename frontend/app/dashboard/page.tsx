@@ -169,6 +169,7 @@ export default function CreditRiskEngine() {
           <h1 className="text-xl md:text-2xl font-bold uppercase tracking-widest text-zinc-100">
             Explainable Credit Engine
           </h1>
+          
           <div className="border border-zinc-800 rounded bg-[#16161A] px-4 py-2 text-xs font-medium tracking-wide text-zinc-400">
             <Clock />
           </div>
