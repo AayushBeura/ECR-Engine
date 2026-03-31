@@ -20,9 +20,13 @@ app = FastAPI(title="Explainable Credit Risk Engine API")
 # Flag to bypass the Supabase database for initial PoC testing
 MOCK_DB = os.getenv("MOCK_DB", "False").lower() in ("true", "1", "t")
 
-# CORS — restrict to configured frontend origin(s)
-_raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
-ALLOWED_ORIGINS: List[str] = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+# CORS — reads from ALLOWED_ORIGINS env var.
+# Set to '*' to allow all (useful for initial deploy), or restrict to your Vercel URL.
+_raw_origins = os.getenv("ALLOWED_ORIGINS", "*")
+if _raw_origins.strip() == "*":
+    ALLOWED_ORIGINS: List[str] = ["*"]
+else:
+    ALLOWED_ORIGINS: List[str] = [o.strip() for o in _raw_origins.split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,

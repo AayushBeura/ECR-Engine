@@ -27,11 +27,14 @@ venv.bak/
 .gemini/
 files.txt
 
-# Generated Data & Models
-*.csv
+# Generated Data & Models (root-level only — models/ dir is committed for deployment)
 *.xlsx
-*.pkl
+/data/*.csv
+/datasets/*.csv
 *.joblib
+# But allow the trained model artifacts needed for deployment:
+!models/*.pkl
+!models/*.csv
 
 # Logs
 *.log
@@ -39,8 +42,8 @@ files.txt
 # Documentation
 docs/
 
-# Scripts
-scripts/
+# Scripts (local utility scripts, not needed in deployment)
+# scripts/
 
 # Project Config
 GSD-STYLE.md
