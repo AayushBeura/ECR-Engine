@@ -5,8 +5,8 @@ cryptography==44.0.0
 lightgbm==4.5.0
 shap==0.46.0
 joblib==1.4.2
-pandas==2.2.3
+pandas<2.0.0
 numpy==1.26.4
 python-dotenv==1.0.1
 dice-ml==0.10.0
-scikit-learn==1.6.0
+scikit-learn<1.6.0
