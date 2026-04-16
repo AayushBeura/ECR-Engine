@@ -294,7 +294,7 @@ python training/train_model.py
 ```
 
 Expected output:
-- `data/synthetic_credit_data.csv` — 5,000 rows, 25% default rate
+- `data/synthetic_credit_data.csv` — 10,000 rows, 25% default rate
 - `models/credit_model.pkl` — LightGBM model (AUC-ROC ~0.83)
 - `models/calibrator.pkl` — Isotonic Regression calibrator
 - `models/training_data.csv` — Training data snapshot for DiCE
@@ -420,15 +420,20 @@ Swagger docs at **http://127.0.0.1:8000/docs**
 
 ## Model Training
 
-### Feature Definitions
+## 📊 Feature Definitions
 
 | Feature | Formula | Monotonic Constraint |
 |---------|---------|---------------------|
-| `income_stability` | CV of 6-month UPI inflows (σ/μ) | ↓ Lower = better |
-| `affordability_index` | (Income − Rent − Utils − EMI) / Income | ↑ Higher = better |
-| `nsf_frequency` | Count of low-balance alerts in 6 months | ↓ Lower = better |
-| `bill_payment_latency` | Avg days late on bill payments | ↓ Lower = better |
-| `network_centrality` | Unique merchant count / 50 (normalized) | ↑ Higher = better |
+| `income_stability` | Coefficient of Variation of monthly income (σ_inc / μ_inc) | ↓ Lower = better |
+| `nsf_frequency` | ∑ I(TransferRatio > 0.90) over transactions | ↓ Lower = better |
+| `time_to_zero` | 1 / (1 + NearZeroEvents) | ↓ Lower = better |
+| `debt_to_income (DTI)` | EMI / μ_inc | ↓ Lower = better |
+| `affordability_index` | max(0.01, min((μ_inc − EMI)/μ_inc, 0.99)) | ↑ Higher = better |
+| `baseline_score` | 2.0(CV) + 0.2(NSF) + 1.5(DTI) − 0.5(TimeZero) − 1.0(Affordability) | ↓ Lower = better |
+| `bill_payment_latency` | Average delay (days) in bill payments | ↓ Lower = better |
+| `network_centrality` | Unique merchants / 50 (normalized) | ↑ Higher = better |
+| `credit_utilization_proxy` | Avg spending / income | ↓ Lower = better |
+| `cashflow_volatility` | Std. deviation of transaction inflows | ↓ Lower = better |
 
 ### Retraining
 
